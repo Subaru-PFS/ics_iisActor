@@ -1,0 +1,17 @@
+#!/bin/bash
+# logs HgCd to /tmp/hgcdlog.txt
+# run in background
+
+log=/tmp/hgcdlog.txt
+
+echo > $log
+echo "HgCd run on `date`" >> $log
+while true
+do
+    v=`adcread hg`
+    c=`adcread cd`
+    echo -n "Hg=$v  Cd=$c  " >> $log
+    date >> $log
+    sleep 60
+done
+

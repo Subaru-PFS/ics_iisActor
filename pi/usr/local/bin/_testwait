@@ -1,0 +1,9 @@
+#!/bin/bash 
+#IIS version
+sleep 3600
+echo "***********************************"
+echo "Your hour for testing is up"
+echo "***********************************"
+rm -f $testingfile
+# NB!! if testing is turned off, everything will be turned off
+# by calibmonitor shortly.

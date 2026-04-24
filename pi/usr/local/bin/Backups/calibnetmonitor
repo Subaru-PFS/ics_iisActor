@@ -1,0 +1,7 @@
+i=`ifconfig | fgrep e`
+ifname=${i%%:*}   # wired interface name, with any luck
+echo "interface=$ifname"
+j=${i#*inet}
+ip=${j%%netmask*}
+echo "IP=$ip"
+

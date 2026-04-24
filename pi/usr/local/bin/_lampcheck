@@ -1,0 +1,90 @@
+#!/bin/bash
+# turns on/off lamps one by one with warmup
+# order H, He, Kr, Ne, Ar, cont, Hgar
+# saves data in /scr0/lcheck.utdst
+
+_testing
+_alloff
+qmount /scr0
+logf=/scr0/lcheck.`udtstr`
+
+echo "Checking and recording lamp fluxes. Log in $logf " | tee $logf
+
+echo | tee -a $logf
+echo "Lamp 1 Mercury-Argon -- OD1; warmup 100 sec"  | tee -a $logf
+_hgar on
+sleep 5
+echo " 5 sec"  | tee -a $logf
+diodes   | tee -a $logf
+sleep 15
+echo "20 sec"  | tee -a $logf
+diodes  | tee -a $logf
+sleep 20
+echo "40 sec"  | tee -a $logf
+diodes  | tee -a $logf
+sleep 20
+echo "60 sec"  | tee -a $logf
+diodes  | tee -a $logf
+sleep 20
+echo "80 sec"  | tee -a $logf
+diodes  | tee -a $logf
+sleep 20
+echo "100 sec"  | tee -a $logf
+diodes  | tee -a $logf
+_alloff
+
+echo | tee -a $logf
+echo "Lamp 2 Neon -- OD1 10s "  | tee -a $logf
+_neon on
+sleep 10; diodes  | tee -a $logf
+_alloff
+
+echo | tee -a $logf
+echo "Lamp 3 Argon -- OD1 10s"  | tee -a $logf
+_argon on
+sleep 10; diodes  | tee -a $logf
+_alloff
+
+echo | tee -a $logf
+echo "Lamp 4 Krypton -- OD1 10s "  | tee -a $logf
+_krypton on
+sleep 10; diodes  | tee -a $logf
+_alloff
+
+echo | tee -a $logf
+echo "Lamp 5 Hydrogen -- no filter 10s" | tee -a $logf
+_hydrogen on
+sleep 10; diodes   | tee -a $logf
+_alloff
+
+echo | tee -a $logf
+echo "lamp 6 Helium -- OD1 + 2mm KG2 10s"  | tee -a $logf
+_helium on
+sleep 10; diodes  | tee -a $logf
+_alloff
+
+echo | tee -a $logf
+echo "Lamp 7 Spare"  | tee -a $logf
+echo "Spare line lamp is not enabled" | tee -a $logf
+
+echo | tee -a $logf
+echo "Lamp 8 Continuum -- CC; warmup 60 sec"  | tee -a $logf
+_cont on
+sleep 5
+echo " 5 sec"  | tee -a $logf
+diodes   | tee -a $logf
+sleep 15
+echo "20 sec"  | tee -a $logf
+diodes  | tee -a $logf
+sleep 20
+echo "40 sec"  | tee -a $logf
+diodes  | tee -a $logf
+sleep 20
+echo "60 sec"  | tee -a $logf
+diodes  | tee -a $logf
+_alloff
+
+echo | tee -a $logf
+echo "done"  | tee -a $logf
+
+_alloff

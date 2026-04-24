@@ -1,0 +1,24 @@
+#!/bin/bash
+# writes an image to an exernal host 
+# for safety, need to be in overlay mode
+# NB!!!! Image size = 2000MiB is hardwired here
+
+if [ "`sysstate`" = "normal" ]
+then
+    echo "You must be in overlay mode to use this script. Say 'reboot' "
+    exit
+fi
+
+if [ "$1" = "" ] || [ "$2" = "" ] 
+then
+    echo "Usage: putimage user@host imagedir"
+    exit
+fi
+
+user=$1
+imagedir=${2%%/}
+imagename=pfsiisimage.`datestr`.img
+
+echo "Starting `udtstr` "
+dd if=/dev/mmcblk0 bs=1M count=2000 status=progress oflag=sync | ssh $user "dd of=$imagedir/$imagename; sync"
+echo "Finished `udtstr`"

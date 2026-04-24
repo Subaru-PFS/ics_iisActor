@@ -1,0 +1,4 @@
+gcc ABE_ADCPi.c adc.c -o adcraw
+mv /usr/local/bin/adcraw /usr/local/bin/adcraw~
+cp adcraw /usr/local/bin
+

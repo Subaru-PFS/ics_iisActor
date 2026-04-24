@@ -1,0 +1,60 @@
+#!/bin/bash
+
+# makes an image on the root of the USB drive and
+# copies it back to the SD card. Just to allay bitrot.
+# for safety, need to be in overlay mode
+# NB!!!! Image size = 2000MiB is hardwired here
+
+
+if [ "`sysstate`" = "normal" ] || [ `id -u` != "0" ]
+then
+    echo "You must be root & in overlay mode to use this script. Say 'reboot' & start over"
+    exit
+fi
+
+qmount /scr0  # it should be mounted
+
+echo "This whole thing takes about 16 minutes. "
+echo "Please do NOT disturb the system in ANY WAY while executing"
+
+echo "Starting system refresh, making image file in /scr0, `udtstr` " | tee -a /scr0/refresh
+
+imagename=/scr0/pfscalib.`datestr`.img
+dd if=/dev/mmcblk0 of=$imagename bs=1M count=2000 status=progress oflag=sync ; sync
+
+
+echo "Writing image in root of /dev/sda, `udtstr`"
+if dd if=/dev/mmcblk0 of=/dev/sda bs=1M count=2000 status=progress oflag=sync 
+then
+    echo "Copy of image to USB successful `udtstr`. Checking. This takes about 3 min"
+    sync
+else
+    echo "Copy to USB did not complete successfully" | tee -a /scr0/refresh
+    exit
+fi
+
+if cmp -n $((2000*1024*1024)) /dev/mmcblk0 /dev/sda 
+then
+    echo "Starting recreation of /boot and /, `udtstr` " | tee -a /scr0/refresh
+    nohup dd if=/dev/sda of=/dev/mmcblk0 bs=1M count=2000 status=progress oflag=sync ; sync
+else
+    echo "Aborting: comparison of image failed `udtstr` " | tee -a /scr0/refresh
+    exit
+fi
+
+echo "Doing final comparison on written image on /dev/mmcblk0, `udtstr`" | tee -a /scr0/refresh
+if cmp -n $((2000*1024*1024)) /dev/mmcblk0 /dev/sda
+then
+    echo "Refresh Complete!!! `udtstr` " | tee -a /scr0/refresh
+
+    echo "Reboot? (y/n)"
+    read i
+    if [ "$i" = "y" ]
+    then
+        reboot
+    fi
+else
+    echo "`udtstr`: final image may be corrupt; final comparison failed"    
+    echo "You have images on the root of /dev/sda and in $imagename"
+    echo "Check these and proceed carefully"
+fi

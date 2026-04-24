@@ -1,0 +1,4 @@
+#!/bin/bash
+#backs up /usr/local/bin to /scr0/
+qmount /scr0
+rsync -avxu /usr/local/bin /scr0/usrlocalbin.`datestr`

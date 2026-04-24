@@ -1,0 +1,9 @@
+#!/bin/bash
+# script to run and check HgCd lamp
+# starts lamp, waits 2 minutes, then starts fans at 20%
+
+hgcd on
+echo "Lamp on"
+sleep 5
+fanwait 20 120 &
+hgcdlog &

@@ -1,0 +1,18 @@
+#!/bin/bash
+# recovers an image from /scr0 on the USB drive and writes it to the SD card
+# for safety, need to be in overlay mode
+# NB!!!! Image size = 2000MiB is hardwired here
+
+if [ "`sysstate`" = "normal" ]
+then
+    echo "You must be in overlay mode to use this script". Say 'reboot' "
+    exit
+fi
+
+if [ "$1" = "" ]
+then
+    echo "Usage: getimage imagepath (typically /scr0/pfsimage.yymmdd.img)
+
+image=$1
+
+dd of=/dev/mmcblk0 if=$image bs=1M count=2000 status=progress oflag=sync ; sync

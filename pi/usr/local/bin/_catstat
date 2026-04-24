@@ -1,0 +1,14 @@
+#!/bin/bash
+# cats the engineering channel files together to make the current engineering 
+# stat file /tmp/_calibstat
+cd /tmp
+# echo `udtstr` >> _calibstat
+for i in _*stat
+do
+    if [ "$i" != "_calibstat" ]
+    then 
+        cat $i >> _calibstat
+    fi
+done
+
+

@@ -1,0 +1,9 @@
+#!/bin/bash
+# script returns success (0) if ready for go command, fail (-1) if not
+
+if [ -e $readyfile ]
+then
+    exit 0
+else
+    exit -1
+fi

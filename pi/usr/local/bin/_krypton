@@ -1,0 +1,26 @@
+#!/bin/bash
+
+if _testtest
+then
+    port=23
+    if [ "$1" = "" ]
+    then
+        echo "USAGE: _krypton [on,off]"
+        exit
+    fi
+    if [ "$1" = "on" ] || [ "$1" = "ON" ]
+    then
+        val=1
+        echo "krypton   on `udtstr`" > /tmp/_kryptonstat
+    else
+        val=0
+        echo "krypton  off `udtstr`" > /tmp/_kryptonstat
+    fi
+    
+    echo $val > /sys/class/gpio/gpio$port/value
+    
+    _catstat
+
+fi
+
+

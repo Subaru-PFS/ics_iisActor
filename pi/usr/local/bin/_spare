@@ -1,0 +1,34 @@
+#!/bin/bash
+
+channel=7
+port=${chport[7]}  #26
+enb=${chenable[$channel]}
+# echo "port=$port channel=$channel enb=$enb"
+
+if _testtest
+then
+    if [ "$1" = "" ]
+    then
+        echo "USAGE: _spare [on,off]"
+        exit
+    fi
+    if [ $enb != 0 ]
+    then
+        if [ "$1" = "on" ] || [ "$1" = "ON" ]
+        then
+            val=1
+            echo "spare      on `udtstr`" > /tmp/_sparestat
+        else
+            val=0
+            echo "spare     off `udtstr`" > /tmp/_sparestat
+        fi
+        echo $val > /sys/class/gpio/gpio$port/value
+    else
+        echo "Channel [$channel] is not enabled"
+    fi
+    
+    _catstat
+
+fi
+
+

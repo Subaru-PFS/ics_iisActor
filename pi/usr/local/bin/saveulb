@@ -1,0 +1,3 @@
+#!/bin/bash
+#backs up /usr/local/bin to telzey
+rsync -avx /usr/local/bin jeg@telzey:/scr1/PfsIIS/usrlocalbin.`datestr`

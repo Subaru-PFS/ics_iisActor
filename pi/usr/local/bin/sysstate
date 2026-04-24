@@ -1,0 +1,6 @@
+if  mount | fgrep 'overlay on / '> /dev/null 
+then 
+    echo "overlay"
+else
+    echo "normal"
+fi

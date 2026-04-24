@@ -1,0 +1,74 @@
+  #!/bin/bash
+# this monitors the network for connectivity with a fixed server,
+# whose IP must be installed as part of the system setup. It is
+# in /boot/serverip. If you do not do this, it will typically NOT
+# fail; it will synthesize a `server' IP from your own, by replacing the
+# host id in your IP with 1: thus for 192.168.1.23, the server becomes
+# 102.168.1.1, which usually is a router and is so OK.
+# 
+# MUCH of this stuff depends on parsing the output of ifconfig, so
+# if you are foolish enough to update the system, it will all break. Not
+# my fault; you have been warned.
+
+netmonitor=/tmp/netmonitor
+
+server=`cat /boot/serverip`
+echo $server > /tmp/serverip
+
+# this stuff parses ifconfig output
+i=`ifconfig | fgrep e | fgrep ':' | fgrep flags`
+ethname=${i%%:*}   # wired interface name, with any luck
+echo ""
+echo "interface=$ethname" | tee -a /tmp/netmonitor
+echo $ethname > /tmp/ethname
+i=`ifconfig $ethname | fgrep inet`
+j=${i#*inet}
+ip=${j%%netmask*}
+# no more ifconfig stuff
+
+echo "IP=$ip" | tee -a /tmp/netmonitor
+echo $ip > /tmp/ipaddress
+ 
+# if $server has not been set or is incorrect, fall bak on xxx.xxx.xxx.1
+if ! ping -c 1 $server &> /dev/null
+then
+    serv2=${ip%.*}.1
+    server=$serv2
+fi
+echo "Server=$server" |  tee -a /tmp/netmonitor
+
+echo $BASHPID > /tmp/netmonitorpid
+
+fiter=0 # number of 1-minute retries to restart networking;
+        # if larger than 30, reset and reboot into overlay mode
+
+while true
+do
+    date >> /tmp/netmonitor
+    if ping -c 1 $server &> /dev/null 
+    then
+        echo "Network is up" >> /tmp/netmonitor
+        fiter=0
+    else
+         # cannot ping server. Try to recoup by restarting networking
+        echo "Network is DOWN, iter=$fiter" >> /tmp/netmonitor
+        service networking restart
+        ip link set $ethname up
+        fiter=$(( fiter + 1 ))
+        # if, after 30 minutes do not succeed, reboot
+        if [ $fiter -gt 15 ]
+        then
+            echo "Rebooting, iter=$fiter" >> /tmp/netmonitor
+            fiter=0
+            if mount | fgrep overlay
+            then
+                /usr/local/bin/reboot
+            else
+                /usr/local/bin/reboot_n
+            fi
+        fi
+    fi
+    sleep 120
+    echo >> /tmp/netmonitor
+done
+

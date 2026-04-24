@@ -1,0 +1,26 @@
+#!/bin/bash
+
+if _testtest
+then
+    port=22
+    if [ "$1" = "" ]
+    then
+        echo "USAGE: _argon [on,off]"
+        exit
+    fi
+    if [ "$1" = "on" ] || [ "$1" = "ON" ]
+    then
+        val=1
+        echo "argon     on `udtstr`" > /tmp/_argonstat
+    else
+        val=0
+        echo "argon    off `udtstr`" > /tmp/_argonstat
+    fi
+    
+    echo $val > /sys/class/gpio/gpio$port/value
+    
+    _catstat
+    
+fi
+
+

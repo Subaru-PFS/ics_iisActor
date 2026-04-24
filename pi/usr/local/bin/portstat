@@ -1,0 +1,7 @@
+source /usr/local/bin/calibhead
+
+if [ `cat $gpiosysdir/gpio${chport[$1]}/value` = 0 ]; then
+    echo 'off'
+else
+    echo ' on'
+fi

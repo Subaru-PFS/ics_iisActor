@@ -1,0 +1,208 @@
+This is all the instances of the string 'calib' in files in /usr/local/bin.
+Look also in /etc/crontab (calibnetwatch,calibmonitor)
+and in /root/.bashrc, .bash_profile (calibhead)
+and in /home/pfs/.bashrc, .bash_profile (calibhead)
+ 
+_catstat:# stat file /tmp/_calibstat
+_catstat:# echo `udtstr` >> _calibstat
+_catstat:    if [ "$i" != "_calibstat" ]
+_catstat:        cat $i >> _calibstat
+_statshow:cat /tmp/_calibstat
+_testing:# calibmonitor. Starts 1 hour grace period (_testwait) in which one
+_testwait:# by calibmonitor shortly.
+calibhead:# variables, directories, and arrays for calibration. This file is to be
+calibhead:export caliblog=/tmp/caliblog
+calibhead:export readyfile=/tmp/calibready
+calibhead:export runningfile=/tmp/calibrunning
+calibhead:export testingfile=/tmp/calibtesting
+caliblamps:source /usr/local/bin/calibhead
+caliblamps:#FIXME all channels, move up and do on init and/or put in calibsetup.
+caliblamps:        echo $* >> $caliblog
+caliblamps:        echo $* | tee -a $caliblog
+caliblamps:    echo $1 >> $caliblog
+caliblamps:    echo -n $1 >> $caliblog
+caliblamps:        echo $1 >> $caliblog
+caliblamps:        echo $1 | tee -a $caliblog
+caliblamps:        echo -n $1 >> $caliblog
+caliblamps:        echo -n $1 | tee -a $caliblog
+caliblamps:# writes an allstat to the caliblog
+caliblamps:    allstat $1 >> $caliblog
+caliblamps:        allstat $1 >> $caliblog
+caliblamps:        allstat $1 | tee -a  $caliblog
+caliblamps:# monitor the calibration process. One. /tmp/calibrunning, is created when 
+caliblamps:# The logfile /tmp/caliblog, is updated at
+caliblamps:# The third is /tmp/calibready, which is created when the lamps are warmed
+caliblamps:# up and ready for a calibration exposure. It is deleted by the function
+caliblamps:# A fourth, /tmp/calibtesting, is present
+caliblamps:        elogit "Killing running calibration process"
+caliblamps:            touch $caliblog  # keep us alive--calibmonitor is watching mod date
+caliblamps:if test ! -r /tmp/calibinitdone
+caliblamps:    touch /tmp/calibinitdone
+caliblamps.240715.1750:source /usr/local/bin/calibhead
+caliblamps.240715.1750:# FIXME calibhead to include calibsetup and delete common stuff
+caliblamps.240715.1750:#FIXME all channels, move up and do on init and/or put in calibsetup.
+caliblamps.240715.1750:        echo $* >> $caliblog
+caliblamps.240715.1750:        echo $* | tee -a $caliblog
+caliblamps.240715.1750:    echo $1 >> $caliblog
+caliblamps.240715.1750:    echo -n $1 >> $caliblog
+caliblamps.240715.1750:        echo $1 >> $caliblog
+caliblamps.240715.1750:        echo $1 | tee -a $caliblog
+caliblamps.240715.1750:        echo -n $1 >> $caliblog
+caliblamps.240715.1750:        echo -n $1 | tee -a $caliblog
+caliblamps.240715.1750:# writes an allstat to the caliblog
+caliblamps.240715.1750:    allstat $1 >> $caliblog
+caliblamps.240715.1750:        allstat $1 >> $caliblog
+caliblamps.240715.1750:        allstat $1 | tee -a  $caliblog
+caliblamps.240715.1750:# monitor the calibration process. One. /tmp/calibrunning, is created when 
+caliblamps.240715.1750:# The logfile /tmp/caliblog, is updated at
+caliblamps.240715.1750:# The third is /tmp/calibready, which is created when the lamps are warmed
+caliblamps.240715.1750:# up and ready for a calibration exposure. It is deleted by the function
+caliblamps.240715.1750:# A fourth, /tmp/calibtesting, is present
+caliblamps.240715.1750:        elogit "Killing running calibration process"
+caliblamps.240715.1750:            touch $caliblog  # keep us alive--calibmonitor is watching mod date
+caliblamps.240715.1750:if test ! -r /tmp/calibinitdone
+caliblamps.240715.1750:    touch /tmp/calibinitdone
+caliblamps.bad:source /usr/local/bin/calibhead
+caliblamps.bad:# FIXME calibhead to include calibsetup and delete common stuff
+caliblamps.calib:source /usr/local/bin/calibhead
+caliblamps.calib:#export caliblog=/tmp/caliblog
+caliblamps.calib:#export readyfile=/tmp/calibready
+caliblamps.calib:#export runningfile=/tmp/calibrunning
+caliblamps.calib:#export testingfile=/tmp/calibtesting
+caliblamps.calib:#export coolingfile=/tmp/calibcooling
+caliblamps.calib:        echo $* >> $caliblog
+caliblamps.calib:        echo $* | tee -a $caliblog
+caliblamps.calib:    echo $1 >> $caliblog
+caliblamps.calib:    echo -n $1 >> $caliblog
+caliblamps.calib:        echo $1 >> $caliblog
+caliblamps.calib:        echo $1 | tee -a $caliblog
+caliblamps.calib:        echo -n $1 >> $caliblog
+caliblamps.calib:        echo -n $1 | tee -a $caliblog
+caliblamps.calib:# writes an allstat to the caliblog
+caliblamps.calib:    allstat $1 >> $caliblog
+caliblamps.calib:        allstat $1 >> $caliblog
+caliblamps.calib:        allstat $1 | tee -a  $caliblog
+caliblamps.calib:        touch $caliblog    # keep the monitor happy; keep updating the 
+caliblamps.calib:# monitor the calibration process. One. /tmp/calibrunning, is created when 
+caliblamps.calib:# /tmp/calibcooling exists. The logfile /tmp/caliblog, is updated at
+caliblamps.calib:# The third is /tmp/calibready, which is created when the lamps are warmed
+caliblamps.calib:# up and ready for a calibration exposure. It is deleted by the function
+caliblamps.calib:# A fourth, /tmp/calibtesting, is present
+caliblamps.calib:        elogit "Killing running calibration process"
+caliblamps.sav:source /usr/local/bin/calibhead
+caliblamps.sav:# FIXME calibhead to include calibsetup and delete common stuff
+caliblamps.sav:#FIXME all channels, move up and do on init and/or put in calibsetup.
+caliblamps.sav:        echo $* >> $caliblog
+caliblamps.sav:        echo $* | tee -a $caliblog
+caliblamps.sav:    echo $1 >> $caliblog
+caliblamps.sav:    echo -n $1 >> $caliblog
+caliblamps.sav:        echo $1 >> $caliblog
+caliblamps.sav:        echo $1 | tee -a $caliblog
+caliblamps.sav:        echo -n $1 >> $caliblog
+caliblamps.sav:        echo -n $1 | tee -a $caliblog
+caliblamps.sav:# writes an allstat to the caliblog
+caliblamps.sav:    allstat $1 >> $caliblog
+caliblamps.sav:        allstat $1 >> $caliblog
+caliblamps.sav:        allstat $1 | tee -a  $caliblog
+caliblamps.sav:# monitor the calibration process. One. /tmp/calibrunning, is created when 
+caliblamps.sav:# The logfile /tmp/caliblog, is updated at
+caliblamps.sav:# The third is /tmp/calibready, which is created when the lamps are warmed
+caliblamps.sav:# up and ready for a calibration exposure. It is deleted by the function
+caliblamps.sav:# A fourth, /tmp/calibtesting, is present
+caliblamps.sav:        elogit "Killing running calibration process"
+caliblamps.sav:            touch $caliblog  # keep us alive--calibmonitor is watching mod date
+caliblamps.sav:if test ! -r /tmp/calibinitdone
+caliblamps.sav:    touch /tmp/calibinitdone
+caliblamps.temp:source /usr/local/bin/calibhead
+caliblamps.temp:# FIXME calibhead to include calibsetup and delete common stuff
+caliblamps.temp:#FIXME all channels, move up and do on init and/or put in calibsetup.
+caliblamps.temp:        echo $* >> $caliblog
+caliblamps.temp:        echo $* | tee -a $caliblog
+caliblamps.temp:    echo $1 >> $caliblog
+caliblamps.temp:    echo -n $1 >> $caliblog
+caliblamps.temp:        echo $1 >> $caliblog
+caliblamps.temp:        echo $1 | tee -a $caliblog
+caliblamps.temp:        echo -n $1 >> $caliblog
+caliblamps.temp:        echo -n $1 | tee -a $caliblog
+caliblamps.temp:# writes an allstat to the caliblog
+caliblamps.temp:    allstat $1 >> $caliblog
+caliblamps.temp:        allstat $1 >> $caliblog
+caliblamps.temp:        allstat $1 | tee -a  $caliblog
+caliblamps.temp:# monitor the calibration process. One. /tmp/calibrunning, is created when 
+caliblamps.temp:# The logfile /tmp/caliblog, is updated at
+caliblamps.temp:# The third is /tmp/calibready, which is created when the lamps are warmed
+caliblamps.temp:# up and ready for a calibration exposure. It is deleted by the function
+caliblamps.temp:# A fourth, /tmp/calibtesting, is present
+caliblamps.temp:        elogit "Killing running calibration process"
+caliblamps.temp:if test ! -r /tmp/calibinitdone
+caliblamps.temp:    touch /tmp/calibinitdone
+caliblamps~:source /usr/local/bin/calibhead
+caliblamps~:        echo $* >> $caliblog
+caliblamps~:        echo $* | tee -a $caliblog
+caliblamps~:    echo $1 >> $caliblog
+caliblamps~:    echo -n $1 >> $caliblog
+caliblamps~:        echo $1 >> $caliblog
+caliblamps~:        echo $1 | tee -a $caliblog
+caliblamps~:        echo -n $1 >> $caliblog
+caliblamps~:        echo -n $1 | tee -a $caliblog
+caliblamps~:# writes an allstat to the caliblog
+caliblamps~:    allstat $1 >> $caliblog
+caliblamps~:        allstat $1 >> $caliblog
+caliblamps~:        allstat $1 | tee -a  $caliblog
+caliblamps~:        touch $caliblog    # keep the monitor happy; keep updating the 
+caliblamps~:# monitor the calibration process. One. /tmp/calibrunning, is created when 
+caliblamps~:# /tmp/calibcooling exists. The logfile /tmp/caliblog, is updated at
+caliblamps~:# The third is /tmp/calibready, which is created when the lamps are warmed
+caliblamps~:# up and ready for a calibration exposure. It is deleted by the function
+caliblamps~:# A fourth, /tmp/calibtesting, is present
+caliblamps~:        elogit "Killing running calibration process"
+calibmonitor:# checks $caliblog's modification time; if the difference between now and 
+calibmonitor:# /tmp/calibtesting does not exist
+calibmonitor:touch /tmp/caliblog
+calibmonitor:chown pfs:pfs /tmp/caliblog
+calibmonitor:    while [ -e /tmp/calibrunning ]
+calibmonitor:        if [ $((`date +%s` - `date -r /tmp/caliblog +%s`)) -gt 40 ]
+calibmonitor:            rm -f /tmp/calibrunning
+calibmonitor:    if [ ! -e /tmp/calibtesting ]
+calibsetup.old:# variables, directories, and arrays for calibration
+calibsetup.old:# NB!!! This is a subset of the definitions in calibhead, and MUST
+calibsetup.old:# calibhead
+fans:# this stuff could be moved into caliblamps -- all can be inline functions,
+fans:        echo "PWM system is not set up" | tee -a $caliblog
+fans:        echo $* >> $caliblog
+fans:        echo $* | tee -a $caliblog
+fans:# $QUIET is exported in caliblamps; seems to be present
+lamptimes:source /usr/local/bin/calibhead
+makeimage:# makes an image in /scr0 on the USB drive. Name is pfscalibimage.yymmdd.img
+makeimage:dd if=/dev/mmcblk0 of=/scr0/pfscalib.`datestr`.img bs=1M count=2000 status=progress oflag=sync ; sync
+netcheck:# by calibnetwatch, to verify and check.
+portsetup:logfile=/tmp/calibsetup.log
+portsetup:# rc.local, so cannot export varibles. That is done by calibsetup,
+portstat:source /usr/local/bin/calibhead
+refreshimage:imagename=/scr0/pfscalib.`datestr`.img
+tailit:tail -f $caliblog
+tcp_server.py:logger = logging.getLogger('caliblamp')
+tcp_server.py:    RUNNING_FILE = "/tmp/calibrunning"
+tcp_server.py:    READY_FILE = "/tmp/calibready"
+tcp_server.py:    COOLING_FILE = "/tmp/calibcooling"
+tcp_server.py:        Track and control the calibration lamp, mostly via files in /tmp.
+tcp_server.py:        calibrunning is created when lamps() is called and deleted
+tcp_server.py:        calibready is created when the lamps have been warmed up and
+tcp_server.py:        calibcooling exists after the lamps have been run, and the
+tcp_server.py:        calibtesting exists when in testing mode. Not yet sure what
+tcp_server.py:        """Call one of the caliblamps primitive shell functions or commands. """
+tcp_server.py:        res = subprocess.run(["/bin/bash", "-c", "source /usr/local/bin/caliblamps && %s" % (cmdStr)],
+tcp_server.py:        self.caliblampState = self.server.caliblampState
+tcp_server.py:            if name not in self.caliblampState.lampNames:
+tcp_server.py:        return self.caliblampState.setup(cmdStr)
+tcp_server.py:            ret = self.caliblampState.go()
+tcp_server.py:            ret = self.caliblampState.stop()
+tcp_server.py:            ret = self.caliblampState.status()
+tcp_server.py:            ret = self.caliblampState.allstat()
+tcp_server.py:            ret = self.caliblampState.runstat()
+tcp_server.py:            ret = self.caliblampState.lampTimes()
+tcp_server.py:            ret = self.caliblampState.cmd(cmdStr)
+tcp_server.py:    def __init__(self, *kl, caliblampState=None, **kv):
+tcp_server.py:        self.caliblampState = caliblampState
+tcp_server.py:        self.name = 'caliblamp'
+tcp_server.py:    server = CaliblampServer((ip, port), CaliblampRequestHandler, caliblampState=state)

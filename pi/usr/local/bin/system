@@ -1,0 +1,6 @@
+if  mount | fgrep 'overlay on / '> /dev/null 
+then 
+    echo "System is in overlay mode, write-protected root filesystem"
+else
+    echo "System is in normal mode, read/write root filesystem"
+fi

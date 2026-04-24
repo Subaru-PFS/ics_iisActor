@@ -1,0 +1,4 @@
+#save files in /scr0/savestuff
+qmount /scr0
+rsync -avxu --no-o --no-g $* /scr0/savestuff
+sync

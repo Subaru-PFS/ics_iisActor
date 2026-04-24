@@ -1,0 +1,13 @@
+source /usr/local/bin/calibhead
+
+for i in 1 2 3 4 5 6 7 8; do
+    name=${lampname[$i]}
+    if [ ${chenable[$i]} != 0 ]; then
+        offTime=`cat $statefileDir/${name}_off`
+        onTime=`cat $statefileDir/${name}_on`
+        state=`portstat $i`
+        echo "$name=$state,$offTime,$onTime"
+    else
+        echo "$name=not enabled"
+    fi
+done

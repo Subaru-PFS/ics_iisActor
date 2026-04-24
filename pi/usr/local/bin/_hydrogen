@@ -1,0 +1,26 @@
+#!/bin/bash
+
+if _testtest
+then
+    port=24
+    if [ "$1" = "" ]
+    then
+        echo "USAGE: _hydrogen [on,off]"
+        exit
+    fi
+    if [ "$1" = "on" ] || [ "$1" = "ON" ]
+    then
+        val=1
+        echo "hydrogen  on `udtstr`" > /tmp/_hydrogenstat
+    else
+        val=0
+        echo "hydrogen  off `udtstr`" > /tmp/_hydrogenstat
+    fi
+    
+    echo $val > /sys/class/gpio/gpio$port/value
+    
+    _catstat
+
+fi
+
+

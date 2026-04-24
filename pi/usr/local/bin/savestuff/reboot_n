@@ -1,0 +1,3 @@
+echo "setting system to normal mode (read-write root filesystem)"
+sudo /sbin/reboot_n
+

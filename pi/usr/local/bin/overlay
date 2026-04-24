@@ -1,0 +1,21 @@
+#!/bin/bash
+# Sets up system for overlay root file system. Must reboot to take effect
+# now called by /sbin/reboot
+cd /boot
+# check config.txt
+if  ! cmp config.overlay config.txt >& /dev/null
+then
+    cp -f config.overlay config.txt
+    echo "copying config.overlay to config.txt"
+fi
+#check cmdline.txt
+if  ! cmp cmdline.overlay cmdline.txt >& /dev/null
+then
+    cp -f cmdline.overlay cmdline.txt
+    echo "copying cmdline.overlay to cmdline.txt"
+fi
+echo "Set up for overlay (read-only) operation on root filesystem."
+sync
+
+
+

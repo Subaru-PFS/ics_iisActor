@@ -1,0 +1,21 @@
+#/bin/bash
+# kills all iis processes and leave clean machine
+    
+    LPID=0
+    if [ -e $runningfile ]
+    then
+        LPID=`cat $runningfile`
+    fi
+    # Turn off all lamps, and clear running and testing state.
+    #first clean up
+    _alloff  # kills runningfile readyfile
+    _testoff # kills everything
+    # if there is a running lamp process, kill it
+    if [ "$LPID" != "0" ]
+    then 
+        kill $LPID
+    fi
+ 
+
+
+    

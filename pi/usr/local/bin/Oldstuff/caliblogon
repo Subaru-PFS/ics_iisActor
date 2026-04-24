@@ -1,0 +1,11 @@
+#!/bin/bash
+
+while true
+do
+    allstat | tee -a /tmp/caliblog
+
+        
+    sleep 10 # 30
+done
+
+

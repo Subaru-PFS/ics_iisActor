@@ -1,0 +1,24 @@
+#!/bin/bash
+sysdir=/sys/class/gpio
+
+# does this *WORK*?
+
+#GPIO PORTS
+for i in 26 22 25 27 23 17 24
+do
+    echo $i > $sysdir/unexport
+    if [ -d $sysdir/gpio$i ]
+    then
+        echo "Failed to disable BCM port $i"
+    fi
+done
+
+# PWM
+echo 0 > /sys/class/pwm/pwmchip0/unexport
+if [ -d /sys/class/pwm/pwmchip0/pwm0 ]
+then
+    echo "Failed to unexport pwm0"
+    exit
+fi
+
+

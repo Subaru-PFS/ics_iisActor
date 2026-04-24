@@ -1,0 +1,24 @@
+#!/bin/bash
+# sets up system for normal (writeable root filesystem) operation. 
+# reboots after delay which allows cancellation.
+cd /boot
+# check config.txt
+if ! cmp config.normal config.txt >& /dev/null
+then
+    cp -f config.normal config.txt
+    echo " copying config.normal to config.txt"
+fi
+# check cmdline.txt
+if ! cmp cmdline.normal cmdline.txt >& /dev/null
+then
+    cp -f cmdline.normal cmdline.txt
+    echo " copying cmdline.normal to cmdline.txt"
+fi
+sync
+echo "Set up for normal read/write operation on root filesystem. Reboot in 3 sec"
+echo " **** Interrupt with ^C if not wanted ***** "
+sleep 3
+echo "Booting into normal mode"
+systemctl reboot
+
+

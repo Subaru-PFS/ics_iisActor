@@ -1,0 +1,22 @@
+#!/bin/bash
+
+fanport=24
+
+# returns fanspeed in percent if fans are running, 0 otherwise
+fanontime=`cat $pwmsysdir/duty_cycle`  # ontime in ns
+period=`cat $pwmsysdir/period`         # period in ns 
+if [ $period != 0 ] 
+then
+    let fanspeed=fanontime*100/period
+else
+    let fanspeed=0
+fi
+fanenable=`cat $pwmsysdir/enable`
+fanpower=`cat $gpiosysdir/gpio$fanport/value`
+
+if [ "$fanenable" = 1 ] && [ "$fanpower" = 1 ] && [ $fanspeed -ge 10 ]
+then
+    echo $fanspeed
+else
+    echo 0
+fi

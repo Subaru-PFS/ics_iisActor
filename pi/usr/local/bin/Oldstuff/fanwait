@@ -1,0 +1,7 @@
+#!/bin/bash
+# wait for $2 sec, then turn on fans at speed $1
+sleep $2
+echo
+echo "Turning Fans on, speed $1"
+echo
+fans $1

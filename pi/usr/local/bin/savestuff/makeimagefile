@@ -1,0 +1,15 @@
+#!/bin/bash
+# makes an image in a file in /scr0 (partition /dev/sda3)on the USB drive. 
+# Filename is /scr0/pfsiisimage.yymmdd.img
+# for safety, need to be in overlay mode
+# NB!!!! Image size = 2000MiB is hardwired here
+
+
+if [ "`sysstate`" = "normal" ]
+then
+    echo "You must be in overlay mode to use this script. Say 'reboot' & start over"
+    exit
+fi
+
+qmount /scr0 
+dd if=/dev/mmcblk0 of=/scr0/pfsiis.`datestr`.img bs=1M count=2000 status=progress oflag=sync ; sync

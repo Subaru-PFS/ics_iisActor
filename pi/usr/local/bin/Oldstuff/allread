@@ -1,0 +1,7 @@
+#!/bin/bash
+for i in ne ar kr xe hg cd cont
+do
+    echo -n -e  "$i\t" ;
+    adcread $i
+done
+

@@ -1,0 +1,9 @@
+#!/bin/bash
+echo -n "Silicon: "
+i=`adcraw 7`
+echo -n $i
+sleep .6
+echo -n " InGaAs: "
+i=`adcraw 8`
+echo -n $i
+echo

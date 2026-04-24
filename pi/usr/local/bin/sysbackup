@@ -1,0 +1,50 @@
+#!/bin/bash
+# backup system to usb drive
+
+if [ `id -u` != 0 ]
+then
+    echo "You must be root to execute this backup command. Either sudo or become root"
+    exit
+fi
+
+if [ "`sysstate`" == "overlay" ]
+then
+    echo "You must be in normal r/w rootfs mode to execute this backup command."
+    echo "reboot into normal mode:  reboot_n"
+    exit
+fi
+
+if ! mount /mnt/usbboot
+then
+    echo "Cannot mount /mnt/usbboot. Try by hand??"
+    exit
+else
+    echo ""
+    echo "Backing up /boot"
+    echo ""
+fi
+
+rsync -avxu /boot/ /mnt/usbboot
+
+umount /mnt/usbboot
+
+if ! mount /mnt/usbroot
+then
+    echo "Cannot mount /mnt/usbroot. Try by hand??"
+    exit
+else
+    echo ""
+    echo " Backing up rootfs"
+    echo ""
+fi
+
+rsync -avxu --exclude='/var/cache' --exclude='/var/tmp' --exclude='/var/log' / /mnt/usbroot
+
+mkdir /mnt/usbroot/tmp >& /dev/null
+
+echo ""
+echo "Backing up /tmp "
+echo ""
+rsync -avxu --delete --exclude='ssh-*' --exclude='systemd-*' /tmp /mnt/usbroot/tmp
+
+umount /mnt/usbroot

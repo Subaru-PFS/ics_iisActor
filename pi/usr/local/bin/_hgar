@@ -1,0 +1,24 @@
+#!/bin/bash
+
+if _testtest
+then
+    port=13
+    if [ "$1" = "" ]
+    then
+        echo "USAGE: _hgar [on,off]"
+        exit
+    fi
+    if [ "$1" = "on" ] || [ "$1" = "ON" ]
+    then
+        val=1
+        echo "hgar      on `udtstr`" > /tmp/_hgarstat
+    else
+        val=0
+        echo "hgar     off `udtstr`" > /tmp/_hgarstat
+    fi
+    
+    echo $val > /sys/class/gpio/gpio$port/value
+    
+    _catstat
+fi
+

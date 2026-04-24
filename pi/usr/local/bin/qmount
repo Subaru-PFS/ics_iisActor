@@ -1,0 +1,6 @@
+if ! mount | fgrep $1 >& /dev/null ; then 
+    mount $1 
+    echo "mounting $1"  
+else
+    echo "$1 already mounted"
+fi

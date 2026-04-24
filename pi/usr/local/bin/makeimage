@@ -1,0 +1,14 @@
+#!/bin/bash
+# makes an image on /dev/sda in the USB drive. 
+# for safety, need to be in overlay mode
+# NB!!!! Image size = 2000MiB is hardwired here
+
+
+if [ "`sysstate`" = "normal" ]
+then
+    echo "You must be in overlay mode to use this script. Say 'reboot' & start over"
+    exit
+fi
+
+dd if=/dev/mmcblk0 of=/dev/sda bs=1M count=2000 status=progress oflag=sync 
+sync

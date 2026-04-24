@@ -1,0 +1,73 @@
+# script to produce hgcd warmup record
+t0=`date +%s`
+port=23
+
+exptime=$1
+if [ "$exptime" = "" ]
+then
+    exptime=300  # old test mode
+fi
+
+rline () {
+    j=`date +%s`
+    t=$(($j - $t0))
+    if $exon
+    then
+        ext=$(($j - $ext0))
+    fi
+
+    cad=`adcread 6`
+    mer=`adcread 5`
+    echo "$t   `fanspeed`  $ext  $mer   $cad "
+}
+
+_testing
+
+#turn on lamp
+echo 1 > /sys/class/gpio/gpio$port/value
+
+int=0
+t=0
+ext=0
+
+fans off
+fansoff=true
+exon=false
+
+echo
+udtstr
+echo
+rline
+while true
+do
+    sleep 2
+
+    rline
+    if [ $t -ge 120 ] || compare "$cad > 0.35" 
+    then
+        if $fansoff
+        then
+            fans 20
+            fansoff=false
+            exon=true
+            ext0=`date +%s`
+        fi
+    fi
+    if compare "$cad > 0.35" && $fansoff
+    then
+        fans 20
+        fansoff=false
+    fi
+    if [ $t -ge 300 ] || [ $ext -gt $exptime ]
+    then
+        echo 0 > /sys/class/gpio/gpio$port/value
+        fans off
+        _alloff
+        break
+    fi
+        
+    int=$(($int + 2))
+done     
+udtstr
+
+

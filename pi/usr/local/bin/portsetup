@@ -1,0 +1,56 @@
+#!/bin/bash
+
+
+logfile=/tmp/calibsetup.log
+touch $logfile
+chown pfs:pfs $logfile
+
+#directories -- note that this script is run as root at bootup from
+# rc.local, so cannot export varibles. That is done by calibsetup,
+# executed by ~pfs/.bashrc at login
+
+gpiosysdir=/sys/class/gpio
+
+echo "Calibration system setup on `date`" > $logfile
+
+#Set up GPIO ports
+
+# 8 output ports
+# ch      1  2  3  4  5  6  7  8
+for i in 13 17 22 23 24 25 26 27
+do
+    if [ ! -d $gpiosysdir/gpio$i ]  # not already exported
+    then
+        echo " Setting up port $i " >> $logfile
+        echo $i > $gpiosysdir/export
+    fi
+    if [ ! -d $gpiosysdir/gpio$i ]  # I didn't screw up
+    then
+        echo "Failed to export BCM port $i" >> $logfile
+    fi
+    echo "out" > $gpiosysdir/gpio$i/direction
+    echo 0     > $gpiosysdir/gpio$i/active_low
+    echo 0     > $gpiosysdir/gpio$i/value
+done
+
+echo "GPIO setup" >> $logfile
+
+# NB!!! no PWM for IIS
+#Set up PWM
+
+# pwmsysdir=/sys/class/pwm/pwmchip0/pwm0
+
+# echo 0 > /sys/class/pwm/pwmchip0/export
+# if [ ! -d $pwmsysdir ]
+# then
+#     echo "Failed to export pwm0" >> $logfile
+# exit
+# fi
+# echo 0 > $pwmsysdir/enable
+
+# echo "PWM setup" >> logfile
+
+# No setup is necessary for the ADC; all is handled by the little
+# C module built in /usr/local/bin/src by ./makeacd in that directory,
+# which also installs the executable, adcraw, in /usr/local/bin and
+# backs up the current one.

@@ -1,0 +1,6 @@
+#!/bin/bash
+echo "     Calibration System Status"
+echo "Current date/time = `udtstr`"
+echo
+cat /tmp/_calibstat
+

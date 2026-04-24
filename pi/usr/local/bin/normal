@@ -1,0 +1,20 @@
+#!/bin/bash
+# sets up system for normal (writeable root filesystem) operation. Must reboot to take effect
+# now called by reboot_n
+cd /boot
+# check config.txt
+if ! cmp config.normal config.txt >& /dev/null
+then
+    cp -f config.normal config.txt
+    echo "copying config.normal to config.txt"
+fi
+# check cmdline.txt
+if ! cmp cmdline.normal cmdline.txt >& /dev/null
+then
+    cp -f cmdline.normal cmdline.txt
+    echo "copying cmdline.normal to cmdline.txt"
+fi
+echo "Set up for normal read/write operation on root filesystem."
+sync
+
+

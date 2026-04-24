@@ -1,0 +1,113 @@
+#!/bin/bash
+port=24
+
+# this stuff could be moved into caliblamps -- all can be inline functions,
+# but just leave it here. 
+
+# we can be called either with fans or _fans
+
+pwmsysdir=/sys/class/pwm/pwmchip0/pwm0
+
+# these functions interact with the pwm hardware system to enable/start
+# and disable the pwm for the fans. The intake fan does not start
+# reliably with less than ~20% duty cycle, so we kick them all to
+# start
+
+# fon [ duty-cycle ] turns on the fan pwm. The fan *power* is controlled by
+# gpio port 24. This function ASSUMES that the power is on.
+
+ fon () {
+    if [ ! -d $pwmsysdir ] 
+    then
+        echo "PWM system is not set up" | tee -a $caliblog
+    fi
+
+    #check current state
+    enab=`cat $pwmsysdir/enable`
+    olddc=`cat $pwmsysdir/duty_cycle`
+    
+    #calculate ontime
+    freq=10 # freq is hardwired at 10kHz
+    dc=$1 # duty cycle in *percent*
+    let period=1000000/freq #  period in ns
+    let kduty=period/2  # 50% kick to start
+    let duty_cycle=(period*dc)/100  # $duty_cycle is *ONTIME* in ns
+    #echo "Setting up PWM with period = $period ns, duty-cycle = $dc, onduration=$duty_cycle ns"
+
+    #set period
+    echo $period > $pwmsysdir/period
+
+    #kickstart
+    echo $kduty > $pwmsysdir/duty_cycle # 50% for 1 s to kick-start
+    echo 1 > $pwmsysdir/enable
+    sleep 1  #kicking
+    
+    #set desired speed
+    echo $duty_cycle > $pwmsysdir/duty_cycle # set desired speed
+ }
+
+ foff () {  
+    echo 0 > $pwmsysdir/duty_cycle
+    echo 0 > $pwmsysdir/enable
+ } 
+
+echon () {  
+    if $QUIET
+    then
+        echo $* >> $caliblog
+    else
+        echo $* | tee -a $caliblog
+    fi
+}
+
+# $QUIET is exported in caliblamps; seems to be present
+
+# ******************************************************
+
+call=${0##*/}
+# echo $call
+
+if [ "$1" = "" ]
+then
+    echo 'USAGE: fans [on,off,dutycycle (10-100)]'
+    exit
+fi
+
+val=$1
+
+if [ "$val" = "on" ] || [ "$val" = "ON" ]
+then
+    val=99
+fi
+
+if [ "$val" = "0" ] ||  [ "$val" = "off" ] || [ "$val" = "OFF" ]
+then
+    echon "Turning off fans"
+    echo 0 > /sys/class/gpio/gpio$port/value
+    foff
+    if [ "$call" = "_fans" ] # engineering call
+    then
+        echon "fans      $val `udtstr`" > /tmp/_fanstat
+        _catstat 
+    fi
+    exit 0
+fi
+
+if (( val >= 10 )) && (( val <= 100 ))
+then
+    echo 1 > /sys/class/gpio/gpio$port/value
+    if [ "$val" = "100" ] ; then val=99 ; fi
+    fon $val
+    echon "Turning on fans, speed = $val at `udtstr`"
+    if [ "$call" = _fans ] # engineering call
+    then
+        echo "fans      $val `udtstr`" > /tmp/_fanstat
+        _testing
+        _catstat 
+    fi
+    exit 0
+fi
+
+echo "$val is not a legal argument for the fans script" | tee -a $logfile
+exit -1
+

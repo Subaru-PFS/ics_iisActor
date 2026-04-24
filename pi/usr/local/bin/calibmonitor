@@ -1,0 +1,46 @@
+#!/bin/bash
+# monitor for system. If there is no runningfile, just issues alloff
+# command every 10 minutes. If $runningfile or #coolingfile exists, 
+# checks $caliblog's modification time; if the difference between now and 
+# that time is greater than 40 seconds, throws an error and reboots. 
+# Every 30 sec it zeros all the ports if lamps() is not running and if
+# /tmp/calibtesting does not exist
+#
+# This script is started at boot by crontab as root. We need a watchdog
+# process, probably, to watch the watchdog.
+
+touch /tmp/caliblog
+chown pfs:pfs /tmp/caliblog
+while true
+do
+    /bin/sleep 10
+    # if lamps() is running, check every 30 sec to make sure that the log 
+    # is being written to; otherwise panic and reboot
+    while [ -e /tmp/calibrunning ]
+    do
+        # check that the log has been written to in the last 40 seconds
+        if [ $((`date +%s` - `date -r /tmp/caliblog +%s`)) -gt 40 ]
+        then
+            t="`who | fgrep pfs | fgrep pfs`"
+            # t looks like
+            # "pfs      pts/0        2020-01-06 16:28 (128.112.25.141)"
+            # convert the string into an array
+            tt=($t)
+            # retrieve the tty and write panic message to it
+            ttt=${tt[1]}   # tty of pfs
+            echo " LAMPS is not responding properly."
+            echo " LAMPS is not responding properly. rebooting" | write pfs $ttt
+            rm -f /tmp/calibrunning
+            /usr/local/bin/_alloff
+            reboot
+        fi
+        sleep 30
+    done
+    # if we are not testing, turn off all the ports twice a minute
+    if [ ! -e /tmp/calibtesting ]
+    then
+        /usr/local/bin/_alloff    
+    fi
+    # check again in a half a minute
+    /bin/sleep 20
+done

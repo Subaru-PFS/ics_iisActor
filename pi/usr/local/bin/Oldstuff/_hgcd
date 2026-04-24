@@ -1,0 +1,58 @@
+#!/bin/bash
+
+port=23
+
+hgcdkill() {
+    sleep 130
+    # if, after 2 min, the fans are off and the lamp is on, kill it 
+    if [ `fanread` -lt 10 ] && [ `cat /sys/class/gpio/gpio$port/value` != 0 ]
+    then
+        echo "Turning HgCd off"
+        _hgcd off
+    fi
+}
+
+hgcdwarn() {
+    sleep 110
+    echo "The HgCd lamp will turn off in 20 seconds unless the fans are on"
+    echo "I will try to turn on the fans in 10 seconds"
+}
+
+hgcdfan() {
+    sleep 120
+    _fans 20
+}
+
+
+if [ "$1" = "" ]
+then
+    echo "USAGE: _hgcd [on,off]"
+    exit
+fi
+
+
+if ! _testtest 
+then
+    exit
+fi
+
+if [ "$1" = "on" ] || [ "$1" = "ON" ]
+then
+    echo "This lamp can be run without fan cooling for at most 2 minutes."
+    echo "It will turn off after 2 minutes unless the fans are running at"
+    echo "the 2 minute point. I will attempt to turn on the fans at 2 minutes."
+    val=1
+    hgcdkill &
+    hgcdwarn &
+    hgcdfan &
+    echo "hgcd      on `udtstr`" > /tmp/_hgcdstat
+else
+    val=0
+    echo "hgcd     off `udtstr`" > /tmp/_hgcdstat
+fi
+
+echo $val > /sys/class/gpio/gpio$port/value
+_catstat
+
+
+

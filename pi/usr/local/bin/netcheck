@@ -1,0 +1,34 @@
+#!/bin/bash
+# this redoes the calculations to produce the network information used
+# by calibnetwatch, to verify and check.
+# 
+# MUCH of this stuff depends on parsing the output of ifconfig, so
+# if you are foolish enough to update the system, it will all break. Not
+# my fault; you have been warned.
+
+server=`cat /tmp/serverip` 
+
+# this stuff parses ifconfig output
+i=`ifconfig | fgrep e | fgrep ':'`
+ethname=${i%%:*}   # wired interface name, with any luck
+echo ""
+echo "      interface=$ethname" 
+echo "saved interface=`cat /tmp/ethname`"
+
+i=`ifconfig $ethname | fgrep inet`
+j=${i#*inet}
+ip=${j%%netmask*}
+# no more ifconfig stuff
+
+echo "      IP=$ip"
+echo "saved IP= `cat /tmp/ipaddress`"
+
+# if $server has not been set or is incorrect, fall bak on xxx.xxx.xxx.1
+if ! ping -c 1 $server &> /dev/null
+then
+    serv2=${ip%.*}.1
+    server=$serv2
+fi
+echo "      ServerIP=$server"
+echo "saved ServerIP=`cat /tmp/serverip`"
+

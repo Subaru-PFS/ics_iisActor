@@ -1,0 +1,2 @@
+echo "Setting system to overlay (read-only root filesystem) and rebooting"
+sudo /sbin/reboot

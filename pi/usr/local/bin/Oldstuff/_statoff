@@ -1,0 +1,10 @@
+#!/bin/bash
+# zeros the various engineering stat files and does a catstat
+echo "neon     off `udtstr`" > /tmp/neonstat
+echo "argon    off `udtstr`" > /tmp/argonstat
+echo "krypton  off `udtstr`" > /tmp/kryptonstat
+echo "xenon    off `udtstr`" > /tmp/xenonstat
+echo "hgcd     off `udtstr`" > /tmp/hgcdstat
+echo "cont     off `udtstr`" > /tmp/contstat
+echo "fans     off `udtstr`" > /tmp/fanstat
+catstat

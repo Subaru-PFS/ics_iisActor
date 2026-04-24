@@ -1,0 +1,4 @@
+# retrieves files from /scr0/savestuff
+# NB!!! writes all to /usr/local/bin
+qmount /scr0
+rsync -avxu /scr0/savestuff/* /usr/local/bin/

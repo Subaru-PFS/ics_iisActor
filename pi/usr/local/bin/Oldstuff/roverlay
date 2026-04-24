@@ -1,0 +1,24 @@
+#!/bin/bash
+# sets up the system for overlay on root filesystem. Must boot to take effect.
+
+cd /boot
+# check config.txt
+if  ! cmp config.overlay config.txt >& /dev/null
+then
+    cp -f config.overlay config.txt
+    echo "copying config.overlay to config.txt"
+fi
+#check cmdline.txt
+if  ! cmp cmdline.overlay cmdline.txt >& /dev/null
+then
+    cp -f cmdline.overlay cmdline.txt
+    echo "copying cmdline.overlay to cmdline.txt"
+fi
+sync
+echo "Set up for overlay (readonly) operation on root filesystem. Reboot in 3 sec"
+echo " **** Interrupt with ^C if not wanted  ****  "
+sleep 3
+echo " Booting into overlay mode"
+reboot
+
+

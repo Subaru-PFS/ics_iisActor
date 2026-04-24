@@ -1,0 +1,24 @@
+#!/bin/bash
+
+if _testtest
+then
+    port=27
+    if [ "$1" = "" ]
+    then
+        echo "USAGE: _cont [on,off]"
+        exit
+    fi
+    if [ "$1" = "on" ] || [ "$1" = "ON" ]
+    then
+        val=1
+        echo "contiuum  on `udtstr`" > /tmp/_contstat
+    else
+        val=0
+        echo "continuum off `udtstr`" > /tmp/_contstat
+    fi
+    
+    echo $val > /sys/class/gpio/gpio$port/value
+    
+    _catstat
+fi
+

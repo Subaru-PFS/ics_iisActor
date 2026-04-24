@@ -1,0 +1,12 @@
+#!/bin/bash   
+# IIS version
+# Creates testing file, which inhibits automatic cleanup by
+# calibmonitor. Starts 1 hour grace period (_testwait) in which one
+# can run testing scripts without worrying about the monitoring turning
+# things off. The grace period is renewed at each invocation
+
+
+pkill _testwait
+touch $testingfile
+echo "Entering engineering mode; this will end and all devices turned off in 1 hour"
+_testwait &

@@ -1,0 +1,606 @@
+#!/bin/bash 
+# lamp executive routine. 
+
+# This is all the common stuff--actually, it could just be moved here,
+# because nobody else uses it. The /sys/directories are quoted in the
+# external scripts like fans and the engineering scripts.
+
+source /usr/local/bin/calibhead
+
+#which does the following:
+
+##setup and export channel info
+## These arrays are 1-based, and have the name in element 0 for possible
+## convenience
+#export chname=("" neon argon krypton xenon hg  cd cont fans)
+#export chlabel=("chlabel" "Ne  " "Ar  " "Kr  " "Xe  " "Hg  " "Cd  " "Cont" "Fans")
+#export chtime=("chtime" 0 0 0 0 0 0 0 0 )
+#export chport=("chport" 26 22 25 27 23 23 17 24)
+#export chval=("chval" 0 0 0 0 0 0 0 0 )
+#export adcval=("adcval" 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 )
+#export adcthresh=("adcthresh" 0.7 0.7 0.5 0.35 0.7 0.3 2.5 )
+#export adctarget=("adctarget" 0.92 1.13 1.13 0.67 0.52 )
+#
+##export parameters
+#export fadcthresh=0.20    # fan speed signal threshold for being sure fans are running
+#export hgcdfanspeed=20    # fan speed set during hgcd (and other gaslamps) run
+#export hgcdfanthresh=0.35 # hgcd signal above which fans turn on and it is deemed `ready'
+#export coolingtime=120    # time for fans on full after a session to equalize temps
+#
+##Note that fans threshold, target is for the speed feedback at speed=50, 1s
+##and the thresholds and targets are for readings with the power-up sequence
+##xe, kr, ar, ne at each stage
+#
+## /sys/directories
+#export pwmsysdir=/sys/class/pwm/pwmchip0/pwm0
+#export gpiosysdir=/sys/class/gpio
+#
+## log and control files
+#export caliblog=/tmp/caliblog
+#export readyfile=/tmp/calibready
+#export runningfile=/tmp/calibrunning
+#export testingfile=/tmp/calibtesting
+#export coolingfile=/tmp/calibcooling
+
+# cool compare statement for strings and decimal numbers
+# usage is like:
+# if compare "2.5 < 3.456"; then dosomething; fi
+
+compare () (
+    IFS=" "
+    exec awk "BEGIN{if (!($*)) exit(1)}"
+)
+export -f compare
+
+export QUIET=false
+
+
+# finds the Pi channel number (NOT the gpio port number) from the name
+chbyname () {
+    chbyn=-1
+    hgcdflg=false
+    if [ "$1" = hgcd ]
+    then
+        chbyn=5
+        hgcdflg=true
+    else
+        for i in 1 2 3 4 5 6 7
+        do
+            # echo ${chname[$i]}
+            if [ "$1" = "${chname[$i]}" ] 
+            then
+                chbyn=$i
+                break
+            fi
+        done
+    fi
+    if [ $chbyn = 5 ] || [ $chbyn = 6 ]; then hgcdflg=true; fi
+    if [ $chbyn = -1 ]
+    then
+        echo "No such lamp as $1"
+    fi
+    # echo " in=$1 channel=$chbyn hgcdflg=$hgcdflg " #debug
+    echo $chbyn
+}
+
+# echos value for channel $1 (on, off)
+portstat () {
+    if [ `cat $gpiosysdir/gpio${chport[$1]}/value` = 0 ]
+    then
+        echo 'off'
+    else
+        echo ' on'
+    fi
+}
+
+# sets value ($2, 0 or 1) for channel $1 -- just a utility
+portset () {
+    cat $2 > $gpiosysdir/gpio${chport[$1]}/value
+}
+
+# ******************* STATUS ***********************************************
+
+
+# given a channel number, prints name, on/off, ADC -- just a utility
+statline() {  # parameter is channel number 
+    echo "${chlabel[$1]} `portstat $1` v=`adcread $1`  "
+}
+
+# for all channels, prints timestamp, fan speed, and then the statline
+# data for all channels
+allstat() {
+    echo
+    echo "`udtstr` Fans `fanspeed` $1" 
+    for i in 1 2 3 4 5 6 7
+     
+    do
+        adcval[$i]=`adcread $i`
+        echo  "${chlabel[$i]} `portstat $i` v=${adcval[$i]}  "
+    done
+    echo
+}
+
+# turns all ports off (lamps, fan)    
+alloff () {
+    for i in 1 2 3 4 5  7 8
+    do
+        j=${chport[$i]}
+        echo 0 > $gpiosysdir/gpio$j/value
+        chtime[$i]=0
+        chval[$i]=0
+    done
+}
+
+# ****************** LOGGING ***********************************************
+
+# We keep a running log in /tmp/ with allstat data at intervals
+# while the lamps routine is active. The logfile is updated at
+# intervals not longer than 20 seconds for any call to lamps().
+# which can be used as an aliveness signal by a monitor process.
+
+quiet () {
+    elogit "Entering quiet mode `udtstr`"
+    export QUIET=true
+}
+
+chatty () {
+    export QUIET=false
+    elogit "Leaving quiet mode `udtstr`"
+}
+
+
+# if $QUIET, output echoes to logfile; if ! $QUIET, tees to screen
+echon () {
+    if $QUIET
+    then
+        echo $* >> $caliblog
+    else
+        echo $* | tee -a $caliblog
+    fi   
+}
+
+# logs a string
+logit () {
+    echo $1 >> $caliblog
+}
+
+# no lf
+logitn () {
+    echo -n $1 >> $caliblog
+}
+
+# tees to log and stdio if ! $QUIET, just to log otherwise
+elogit () {
+    if $QUIET
+    then
+        echo $1 >> $caliblog
+    else
+        echo $1 | tee -a $caliblog
+    fi
+}
+
+# likewise, no lf
+elogitn () {
+    if $QUIET
+    then
+        echo -n $1 >> $caliblog
+    else
+        echo -n $1 | tee -a $caliblog
+    fi
+}
+
+# writes an allstat to the caliblog
+logstat () {
+    allstat $1 >> $caliblog
+}
+
+# AND to the terminal
+elogstat () {
+    if $QUIET
+    then
+        allstat $1 >> $caliblog
+    else
+        allstat $1 | tee -a  $caliblog
+    fi
+}
+
+# ****************** POSTCOOLING ****************************************
+# At the end of a run, the fans are turned on at 100 percent for a period
+# of $coolingtime seconds to bring the system to ambient temperature.
+
+coolit () (
+    fans 99
+    echo $BASHPID > $coolingfile
+    elogit "POSTCOOLING, $coolingtime seconds"
+    sleep 10
+    elogstat
+    for i in `seq 0 9 $coolingtime`
+    do    
+        sleep 10
+        touch $caliblog    # keep the monitor happy; keep updating the 
+                           # log file
+        if [ ! -e $coolingfile ] # somebody stop()ed us
+        then
+            break
+        fi
+    done
+    fans off
+    echon "Done cooling"
+    alloff
+    elogstat
+    rm -f $coolingfile
+)
+
+
+#  *************************** CONTROL **********************************
+# This is a bit hokey, but it works. There are three files in /tmp/ which
+# monitor the calibration process. One. /tmp/calibrunning, is created when 
+# lamps() is called and deleted when it finishes, so when it exists the 
+# system is active. It contains one line with the PID of the lamps()
+# process, which runs in a subshell. The lamps() process can be stopped
+# cleanly at any poing with the function stop(), which kills the process
+# and deletes the runningfile. During the postcooling process, the file 
+# /tmp/calibcooling exists. The logfile /tmp/caliblog, is updated at
+# intervals shorter than 30 seconds throughout these phases, which is
+# used as a watchdog signal. 
+
+# The third is /tmp/calibready, which is created when the lamps are warmed
+# up and ready for a calibration exposure. It is deleted by the function
+# 'go()' which starts the timing for the exposure, and turns the lamps off
+# in the sequence determined by the times given to lamp(). At the end
+# the running file is deleted.
+
+# A fourth, /tmp/calibtesting, is present
+# in engineering mode and prevents the monitor from shutting down the
+# system while testing.
+
+# remove all the signal files and turn everything off when this file
+# is sourced
+rm -f $readyfile  
+rm -f $runningfile
+rm -f $testingfile
+rm -f $coolingfile
+alloff
+
+# NB!!!! These files must NEVER be executed in the lamps context,
+# only at the bash prompt
+
+go() {
+    if [ -e $readyfile ]
+    then
+        rm -f $readyfile
+    else
+        elogit " Not ready: cannot execute go command"
+    fi
+}
+
+waitandgo () {
+    while [ ! -e $readyfile ]
+    do
+        sleep 1
+    done
+}
+
+stop () {
+    if [ -e $runningfile ]
+    then
+        elogit "Killing running calibration process"
+        kill `cat $runningfile`
+    elif [ -e $coolingfile ]
+    then
+        elogit "Killing running cooling process"
+        kill `cat $coolingfile`
+    fi
+    #clean up
+    alloff
+    rm -f $readyfile
+    rm -f $runningfile
+    rm -f $testingfile
+    rm -f $coolingfile
+    elogstat    
+}
+
+
+# ********************************************************************
+# ***************** LAMPS ********************************************
+# ********************************************************************
+
+# this is the main routine. It turns on the selected lamps for the
+# selected times. If hgcd is chosen, it waits for it to warm up
+# and turns on the fans and the other lamps when the warmup time
+# is past. It is an error to try to run the continuum lamp at the
+# same time the gaslamps are being run; the fan requirements are
+# incompatible and the power draw is excessive
+    
+_lamps () (
+    if [ "$2" = "" ]
+    then  
+       echo "USAGE:lamps lampname time [lampname time] [lampname time] [nocool]"
+       echo "      lampnames are   neon argon krypton xenon hgcd cont"
+       echo "      times in integer seconds"
+       echo "      nocool suppresses 2 minute cooling sequence at end"
+       exit
+    fi
+
+    contflg=false
+    hgcdflg=false
+    gasflg=false
+    coolflg=true
+
+    alloff
+    rm -f $readyfile
+    rm -f $runningfile
+    rm -f $testingfile
+    rm -f $coolingfile
+    echo $BASHPID > $runningfile
+    echon
+    echon " Process PID = $BASHPID"
+
+    longtime=0
+    
+    while [ "$1" != "" ]
+    # set up the arrays
+    do
+        if [ "$1" = "nocool" ]
+        then
+            coolflg=false
+            break
+        fi
+        if [ "$2" = "0" ] 
+        then 
+            shift
+            shift
+            continue
+        fi
+        lampl=$1
+        chl=`chbyname $lampl`
+        chtime[$chl]=$2
+
+        # fudge continuum time for warmup
+        if [ $chl = 7 ] && [ ${chtime[$chl]} != "0" ]
+        then
+            # continuum       
+            # It takes 800 ms to reach half-power, so
+            # add a second to the exposure time.
+            chtime[7]=$((${chtime[7]} + 1))
+        fi
+
+        # find longest exposure time
+        if [ ${chtime[$chl]} -gt $longtime ]
+        then
+            longtime=${chtime[$chl]}
+        fi
+        portl=${chport[$chl]}
+        if [ $lampl = "hgcd" ] 
+        then hgcdflg=true
+        elif [ $lampl = "cont" ] 
+        then contflg=true 
+        else
+        gasflg=true
+        fi
+        shift
+        shift
+    done
+
+    if $contflg && $hgcdflg
+    then
+        echon "You cannot run the continuum lamp and the hgcd lamp concurrently"
+        return -1
+    fi
+
+    # init the log
+    logit
+    logit
+    elogit "Calibration Lamp run `udtstr`"
+    elogit
+
+    for i in 1 2 3 4 5 6 7
+    do
+        if [ "${chtime[$i]}" != "0" ]
+        then
+            elogit "${chname[$i]}  ${chtime[$i]}"
+        fi
+    done
+    elogit "longtime = $longtime"
+   
+    # turn hgcd on if selected
+
+    if $hgcdflg
+    then
+        elogit "Warming hgcd"
+        # check fan operation
+        fans 50
+        sleep 2.5
+        val=`adcread 7`
+        fans off
+        thresh=$fadcthresh
+            #echo "val,thresh=$val $thresh"
+        if compare "$val < $thresh" 
+        then
+            elogit "fans are not operating properly: val,thresh=$val,$thresh"
+            alloff
+            return -1
+        fi
+        echo 1 > $gpiosysdir/gpio${chport[5]}/value
+    
+        elogstat "  Time=0"
+        # warm up lamp -- quit after 2 minutes or val=0.6, whichever first
+        for i in `seq 1 7`
+        do
+            val=`adcread 6`
+            time=$(( 15 * $i ))
+
+            if compare "$val > $hgcdfanthresh"
+            then
+                break
+            fi
+            sleep 15
+            elogstat "  Time=$time"
+        done
+        fans $hgcdfanspeed    
+        elogit "hgcd warmed up"
+    fi
+
+    # turn on fans for the  continuum
+
+    if $contflg
+    then
+        elogit "Turning on fans for cont"
+        fans 50
+        sleep 2
+        val=`adcread 7`
+        thresh=$fadcthresh
+            #echon "val,thresh=$val $thresh"
+        if compare "$val < $thresh" 
+        then
+            elogit "FAN ERROR: val,thresh=$val,$thresh"
+            alloff
+            elogstat
+            rm -rf $runningfile
+            return -1
+        fi
+    fi
+
+    #check the selected rare gas lamps for proper operation
+    
+    gasflg=false
+    # if rare gas lamps are selected, turn them on in order and check
+    # for proper operation
+    for i in 4 3 2 1
+    do
+        if [ ${chtime[$i]} -gt 0 ]
+        then
+            echo 1 > $gpiosysdir/gpio${chport[$i]}/value
+            sleep 0.5
+            val=`adcread $i`
+            thresh=${adcthresh[$i]}
+            echo 0 > $gpiosysdir/gpio${chport[$i]}/value
+
+            if compare "$val < $thresh"
+            then
+                elogit "${chname[$i]} lamp is faint or off: val,thresh=$val,$thresh"
+            fi
+        fi
+    done
+
+
+    # turn fans on if not already on. Note that continuum trumps; if in the
+    # unlikely situation that you are running both gas and continuum, the
+    # fast continuum fan stays on. If just gas, fans are 20.
+    if [ `fanspeed` -lt $hgcdfanspeed ]
+    then
+        fans $hgcdfanspeed
+    fi
+
+    # all ready. Begin wait loop. Wait for ~two minutes and
+    # shut down if no response
+    echon
+    elogit "lamps ready --- waiting"
+    echon
+    touch $readyfile
+    iter=0
+    while [ -e $readyfile ]
+    do
+        if [ $(( iter % 20 )) = 0 ] # every 10 seconds
+        then
+            elogstat
+        fi
+        iter=$((iter + 1))
+        if [ $iter -gt 200 ]
+        then 
+            elogit "Lamps timed out waiting for go signal, `udtstr`"
+            alloff
+            rm -f $readyfile
+            rm -f $runningfile
+            exit -1
+        fi
+        sleep 0.5
+    done       
+
+    # readyfile gone, so start exposure
+    # now start lamp timing
+    timestart=`date -u +%s`
+    iter=0
+
+    # Turn on continuum
+    if $contflg
+    then
+        # turn on the continuum lamp. 
+        echo 1 > $gpiosysdir/gpio${chport[7]}/value
+    fi
+
+    # turn on the selected gas lamps
+    for i in 4 3 2 1
+    do
+        if [ ${chtime[$i]} -gt 0 ]
+        then
+            echo 1 > $gpiosysdir/gpio${chport[$i]}/value
+        fi
+    done
+
+    
+    elogit "Going `udtstr`"
+    oldtime=-1
+    iter=0
+    firstime=true
+
+    while true
+    do
+        timenow=$((`date -u +%s` - $timestart ))
+        for i in 1 2 3 4 5 7
+        do
+            if [ ${chtime[$i]} -gt 0 ] && [ $timenow -gt ${chtime[$i]} ]
+            then
+                echon "Turning off lamp $i"
+                # turn off lamp and indicate not active
+                echo 0 > $gpiosysdir/gpio${chport[$i]}/value
+                chtime[$i]=0
+            fi
+        done
+        sleep 1 # let lamps light
+        if [ $(($timenow % 2)) = 0 ]
+        then
+            if [ "$oldtime" != $timenow ] # first time integer seconds change
+            then
+                # echon "iter=$iter oldtime,timenow=$oldtime $timenow"
+                if $firstime
+                then
+                    allstat "time=$timenow"
+                    firstime=false
+                else
+                    elogstat "time=$timenow"
+                fi
+                oldtime=$timenow
+            fi
+        fi
+        if [ $timenow -gt $longtime ]
+        then
+            break
+        fi
+        iter=$((iter + 1))
+    done
+    # clean up
+    alloff
+    elogstat
+    rm -rf $runningfile
+    if $coolflg
+    then
+        elogit "Done with Lamps-- Entering cooling period "
+        coolit &
+    fi
+)   
+
+
+lamps () {
+    ( _lamps $* & ) 2> /dev/null
+    if [ -e $runningfile ] # if error, runningfile may not be created
+    then
+        lamppid=`cat $runningfile`
+        export lamppid # for external consumption only
+    fi
+}
+
+
+    
+
+

@@ -1,0 +1,3 @@
+#!/bin/bash
+# This only runs in test mode and turns off when testmode ends
+while _testtest; do echo "`datestr`_`timestr` `diodes`"; done

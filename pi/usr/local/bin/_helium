@@ -1,0 +1,26 @@
+#!/bin/bash
+
+if _testtest
+then
+    port=25
+    if [ "$1" = "" ]
+    then
+        echo "USAGE: _helium [on,off]"
+        exit
+    fi
+    if [ "$1" = "on" ] || [ "$1" = "ON" ]
+    then
+        val=1
+        echo "helium     on `udtstr`" > /tmp/_heliumstat
+    else
+        val=0
+        echo "helium    off `udtstr`" > /tmp/_heliumstat
+    fi
+    
+    echo $val > /sys/class/gpio/gpio$port/value
+    
+    _catstat
+
+fi
+
+
