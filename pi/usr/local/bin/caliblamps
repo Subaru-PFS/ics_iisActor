@@ -51,7 +51,7 @@ portstat () {
             echo ' on'
         fi
     else
-        echo 'not enabled'
+        echo 'not_enabled'
     fi
 }
 
@@ -106,7 +106,7 @@ portOn () {
         chval[$1]=1
         logstate $1 on
     else
-        if [ "$onOff" = "not enabled" ] ; then
+        if [ "$onOff" = "not_enabled" ] ; then
             echo "Port $1 is not enabled"
         fi
     fi

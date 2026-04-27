@@ -40,9 +40,9 @@ class LampsCmd(object):
                                         keys.Key("delay", types.Float(), help="time to delay start for")
                                         )
 
-        self.lampNames = ('neon', 'argon', 'krypton', 'xenon', 'hgar',
+        self.lampNames = ('neon', 'argon', 'krypton', 'hgar',
                           'hydrogen', 'helium', 'halogen')
-        self.piLampNames = ('neon', 'argon', 'krypton', 'xenon', 'hgar',
+        self.piLampNames = ('neon', 'argon', 'krypton', 'hgar',
                             'hydrogen', 'helium', 'cont')
         self.statNames = ('HgAr','Ne','Ar','Kr','H','He','Cont')
         self.keyLampNames = dict(neon='Ne',
@@ -313,9 +313,9 @@ class LampsCmd(object):
         ret = ret.strip()
 
         ts, *parts = re.split('\s+', ret)
-        states = parts[:6] + parts[-1:] # Skip the spare lamp
+        states = parts[:6] + parts[7:8] # Skip the spare lamp
         diodes = [float(p) for p in parts[8:10]]
-
+        cmd.diag(f'text="states={states} diodes={diodes}"')
         for i, n in enumerate(self.statNames):
             statusDict[n] = f'{diodes[0]},{diodes[1]}'
             statusDict[n+"_state"] = states[i]

@@ -6,7 +6,7 @@ import logging
 import socket
 import time
 
-from ics.pfilampsActor.Controllers import bufferedSocket
+from . import bufferedSocket
 reload(bufferedSocket)
 
 class NonClosingSocket(object):
@@ -23,7 +23,7 @@ class DeviceIO(object):
                  keepOpen=False,
                  loglevel=logging.DEBUG):
 
-        self.logger = logging.getLogger('pfilamps')
+        self.logger = logging.getLogger('iis')
         self.logger.setLevel(loglevel)
 
         self.device = None if keepOpen else False
