@@ -124,8 +124,8 @@ class lamps_pi(object):
         self.logger.info('starting lamps_pi')
         self.EOL = b'\n'
 
-        host = self.actor.config.get('pi', 'host')
-        port = int(self.actor.config.get('pi', 'port'))
+        host = self.actor.actorConfig['pi']['host']
+        port = self.actor.actorConfig['pi']['port']
         self.logger.info(f'connecting to {host}:{port}')
 
         self.dev = SocketIO(host, port, name, self.EOL,

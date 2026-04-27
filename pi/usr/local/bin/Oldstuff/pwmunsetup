@@ -1,8 +1,0 @@
-#!/bin/bash
-echo 0 > /sys/class/pwm/pwmchip0/unexport
-if [ -d /sys/class/pwm/pwmchip0/pwm0 ]
-then
-    echo "Failed to unexport pwm0"
-    exit
-fi
-

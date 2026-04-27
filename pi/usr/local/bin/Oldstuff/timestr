@@ -1,3 +1,0 @@
-#!/bin/bash
-# echos a string of the form hhmmss--
-/bin/date +%H%M%S

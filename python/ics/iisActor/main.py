@@ -5,7 +5,7 @@ import actorcore.ICC
 
 class OurActor(actorcore.ICC.ICC):
     def __init__(self, name,
-                 productName=None, configFile=None,
+                 productName=None,
                  modelNames=('gen2'),
                  debugLevel=30):
 
@@ -15,7 +15,6 @@ class OurActor(actorcore.ICC.ICC):
         #
         actorcore.ICC.ICC.__init__(self, name,
                                    productName=productName,
-                                   configFile=configFile,
                                    modelNames=modelNames)
 
         self.everConnected = False
@@ -29,7 +28,7 @@ class OurActor(actorcore.ICC.ICC):
     def connectionMade(self):
         if self.everConnected is False:
             logging.info("Attaching all controllers...")
-            self.allControllers = [s.strip() for s in self.config.get(self.name, 'startingControllers').split(',')]
+            self.allControllers = self.actorConfig['controllers']['starting']
             self.attachAllControllers()
             self.everConnected = True
 
@@ -43,8 +42,8 @@ class OurActor(actorcore.ICC.ICC):
 #
 # To work
 def main():
-    theActor = OurActor(name='pfilamps',
-                        productName='pfilampsActor')
+    theActor = OurActor(name='iis',
+                        productName='iisActor')
     theActor.run()
 
 if __name__ == '__main__':

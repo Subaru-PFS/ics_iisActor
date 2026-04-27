@@ -17,7 +17,7 @@ class LampsCmd(object):
         # passed a single argument, the parsed and typed command.
         #
         self.vocab = [
-            ('prepare', '[<argon>] [<hgcd>] [<krypton>] [<neon>] [<xenon>] [<halogen>]', self.prepare),
+            ('prepare', '[<argon>] [<hgar>] [<krypton>] [<neon>] [<hydrogen>] [<helium>] [<halogen>]', self.prepare),
             ('go', '[<delay>] [@noWait]', self.go),
             ('stop', '', self.stop),
             ('halt', '', self.halt),
@@ -31,21 +31,26 @@ class LampsCmd(object):
         # Define typed command arguments for the above commands.
         self.keys = keys.KeysDictionary("lamps_lamps", (1, 1),
                                         keys.Key("argon", types.Int(), help="Ar lamp time"),
-                                        keys.Key("hgcd", types.Int(), help="HgCd lamp time"),
+                                        keys.Key("hgar", types.Int(), help="HgAr lamp time"),
                                         keys.Key("krypton", types.Int(), help="Kr lamp time"),
                                         keys.Key("neon", types.Int(), help="Ne lamp time"),
-                                        keys.Key("xenon", types.Int(), help="Xe lamp time"),
+                                        keys.Key("hydrogen", types.Int(), help="H lamp time"),
+                                        keys.Key("helium", types.Int(), help="He lamp time"),
                                         keys.Key("halogen", types.Int(), help="Quartz lamp time"),
                                         keys.Key("delay", types.Float(), help="time to delay start for")
                                         )
 
-        self.lampNames = ('neon', 'argon', 'krypton', 'xenon', 'hgcd', 'halogen')
-        self.piLampNames = ('neon', 'argon', 'krypton', 'xenon', 'hgcd', 'cont')
+        self.lampNames = ('neon', 'argon', 'krypton', 'xenon', 'hgar',
+                          'hydrogen', 'helium', 'halogen')
+        self.piLampNames = ('neon', 'argon', 'krypton', 'xenon', 'hgar',
+                            'hydrogen', 'helium', 'cont')
+        self.statNames = ('HgAr','Ne','Ar','Kr','H','He','Cont')
         self.keyLampNames = dict(neon='Ne',
                                  argon='Ar',
                                  krypton='Kr',
-                                 xenon='Xe',
-                                 hgcd='HgCd',
+                                 hydrogen='H',
+                                 helium='He',
+                                 hgar='HgAr',
                                  cont='Cont')
 
         self.request = {}
@@ -73,15 +78,6 @@ class LampsCmd(object):
         """Configure the calibration system lamps for the given exposure times. """
 
         cmdkeys = cmd.cmd.keywords
-        if 'hgcd' in cmdkeys and 'halogen' in cmdkeys:
-            cmd.fail('text="halogen and hgcd cannot both be specified"')
-            return
-
-        self.fetchGen2State(cmd)
-        domeShutter = self.actor.models['gen2'].keyVarDict['domeShutter'].valueList[0]
-        if domeShutter != 'closed':
-            cmd.fail(f'text="dome shutter must be closed ({domeShutter}) to run lamps"')
-            return
 
         lamps = []
         request = {}
@@ -305,12 +301,11 @@ class LampsCmd(object):
     def _allstat(self, cmd):
         """Fetch and parse fan speed and lamp output
 
-        2023-07-19T20:19:22   off off off off off off on    0.0281 0.0284 0.0284 0.0281 0.0286 0.0284 4.8005 NaN    0.00 0.00 0.00 0.00 0.00 0.00 1.45 NaN
+        2023-07-19T20:19:22   off off off off off off off on    0.000 0.000"
 
-        neon argon krypton xenon hg  cd cont fans
+        hgar neon argon krypton h he cont
         """
 
-        statNames = ('Ne','Ar','Kr','Xe','Hg','Cd','Cont')
         statusDict = {}
 
         ret = self.pi.lampsCmd('raw tail -1 /tmp/runlog.txt')
@@ -318,23 +313,18 @@ class LampsCmd(object):
         ret = ret.strip()
 
         ts, *parts = re.split('\s+', ret)
-        states = parts[:7]
-        vs = [float(p) for p in parts[7:15]]
-        vcs = [float(p) for p in parts[15:]]
+        states = parts[:6] + parts[-1:] # Skip the spare lamp
+        diodes = [float(p) for p in parts[8:10]]
 
-        for i, n in enumerate(statNames):
-            val = vs[i]
-            if val != val:
-                val = -9999.9
-            statusDict[n] = vs[i]
+        for i, n in enumerate(self.statNames):
+            statusDict[n] = f'{diodes[0]},{diodes[1]}'
             statusDict[n+"_state"] = states[i]
         return statusDict
 
     def allstat(self, cmd, doFinish=True):
         statDict = self._allstat(cmd)
 
-        statNames = ('Ne','Ar','Kr','Xe','Hg','Cd','Cont')
-        for lamp in statNames:
+        for lamp in self.statNames:
             cmd.inform(f'{lamp}State={statDict[lamp+"_state"]},{statDict[lamp]}')
         self.lampTimes(cmd, doFinish=False)
         if doFinish:

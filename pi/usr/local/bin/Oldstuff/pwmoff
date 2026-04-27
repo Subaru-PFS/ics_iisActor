@@ -1,9 +1,0 @@
-#!/bin/bash
-
-pwmsysdir=/sys/class/pwm/pwmchip0/pwm0
-if [ ! -d $sysdir ]
-then
-    exit
-fi
-
-echo 0 > $pwmsysdir/enable
