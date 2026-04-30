@@ -17,7 +17,7 @@ class LampsCmd(object):
         # passed a single argument, the parsed and typed command.
         #
         self.vocab = [
-            ('prepare', '[<argon>] [<hgar>] [<krypton>] [<neon>] [<hydrogen>] [<helium>] [<halogen>]', self.prepare),
+            ('prepare', '[<hgar>] [<neon>] [<argon>] [<krypton>] [<hydrogen>] [<helium>] [<halogen>]', self.prepare),
             ('go', '[<delay>] [@noWait]', self.go),
             ('stop', '', self.stop),
             ('halt', '', self.halt),
@@ -30,41 +30,31 @@ class LampsCmd(object):
 
         # Define typed command arguments for the above commands.
         self.keys = keys.KeysDictionary("lamps_lamps", (1, 1),
-                                        keys.Key("argon", types.Int(), help="Ar lamp time"),
                                         keys.Key("hgar", types.Int(), help="HgAr lamp time"),
-                                        keys.Key("krypton", types.Int(), help="Kr lamp time"),
                                         keys.Key("neon", types.Int(), help="Ne lamp time"),
+                                        keys.Key("argon", types.Int(), help="Ar lamp time"),
+                                        keys.Key("krypton", types.Int(), help="Kr lamp time"),
                                         keys.Key("hydrogen", types.Int(), help="H lamp time"),
                                         keys.Key("helium", types.Int(), help="He lamp time"),
                                         keys.Key("halogen", types.Int(), help="Quartz lamp time"),
-                                        keys.Key("delay", types.Float(), help="time to delay start for")
+                                        keys.Key("delay", types.Float(), help="time to delay start for"),
+                                        keys.Key("moduleNums", types.String(),
+                                                 help="spectrograph modules we are connected to. Default='1234'"),
                                         )
 
-        self.lampNames = ('neon', 'argon', 'krypton', 'hgar',
+        self.lampNames = ('hgar', 'neon', 'argon', 'krypton', 
                           'hydrogen', 'helium', 'halogen')
-        self.piLampNames = ('neon', 'argon', 'krypton', 'hgar',
+        self.piLampNames = ('hgar', 'neon', 'argon', 'krypton',
                             'hydrogen', 'helium', 'cont')
         self.statNames = ('HgAr','Ne','Ar','Kr','H','He','Cont')
-        self.keyLampNames = dict(neon='Ne',
-                                 argon='Ar',
-                                 krypton='Kr',
-                                 hydrogen='H',
-                                 helium='He',
-                                 hgar='HgAr',
-                                 cont='Cont')
+
+        self.keyLampNames = {long:short for (long,short) in zip(self.piLampNames, self.statNames)}
 
         self.request = {}
 
     @property
     def pi(self):
         return self.actor.controllers['lamps_pi']
-
-    def fetchGen2State(self, cmd):
-        """Quickly update gen2 status (dome shutter and screen). """
-        
-        cmdVar = self.actor.cmdr.call(actor='gen2', cmdStr='updateTelStatus', timeLim=2)
-        if cmdVar.didFail:
-            cmd.warn('text="failed to update gen2 status; ignoring it"')
 
     def raw(self, cmd):
         """ Send a raw command to the controller. """
@@ -226,14 +216,6 @@ class LampsCmd(object):
             cmd.fail('text="No lamps requested"')
             return
 
-        self.fetchGen2State(cmd)
-        domeShutter = self.actor.models['gen2'].keyVarDict['domeShutter'].valueList[0]
-        if domeShutter != 'closed':
-            cmd.fail(f'text="dome shutter must be closed ({domeShutter})to run lamps"')
-            self.request = {}
-            self.requestTime = 0.0
-            return
-
         cmdKeys = cmd.cmd.keywords
         noWait = 'noWait' in cmdKeys
 
@@ -241,10 +223,12 @@ class LampsCmd(object):
         cmd.inform('text="lamps ready, turning them on"')
         ret = self.pi.lampsCmd('go')
         self.genVisitKeys(cmd)
-        self.waitForRunningSignal(cmd)
+
+        cmd.inform('text="lamps commanded, waiting for status"')        
+        self.waitForOnSignal(cmd)
         self.allstat(cmd, doFinish=False)
 
-        waitTime = max(0, self.requestTime)
+        waitTime = max(0, self.requestTime-2)
 
         if noWait:
             cmd.finish(f'text="lamps should be on; please wait {waitTime} to be safe."')
@@ -253,6 +237,7 @@ class LampsCmd(object):
             cmd.inform(f'text="waiting {waitTime} for lamps to go out."')
             time.sleep(waitTime)
 
+        self.allstat(cmd, doFinish=False)
         ok = self.waitForFinishedSignal(cmd)
         self.allstat(cmd, doFinish=False)
         ok = True
@@ -294,16 +279,38 @@ class LampsCmd(object):
     def status(self, cmd):
         """Get current lamp status."""
 
+        self.actor.sendVersionKey(cmd)
+
+        cmd.inform(f'modules={self.actor.actorConfig["modules"]}')
+        
         self.genStatusKey(cmd, *self._getStatus(cmd))
         self.lampTimes(cmd, doFinish=False)
         cmd.finish()
 
+    def waitForOnSignal(self, cmd, maxWait=5):
+
+        t0 = time.time()
+        while True:
+            ret = self.pi.lampsCmd('raw tail -1 /tmp/runlog.txt')
+            cmd.diag(f'text="received {ret}"')
+            ret = ret.strip()
+            if ' on 'in ret:
+                return
+            t1 = time.time()
+            if t1-t0 > maxWait:
+                return
+            time.sleep(0.1)
+
     def _allstat(self, cmd):
-        """Fetch and parse fan speed and lamp output
+        """Fetch and parse lamp and photodiode outputs.
 
-        2023-07-19T20:19:22   off off off off off off off on    0.000 0.000"
+        Notes
+        -----
+        Expected output:
+           2023-07-19T20:19:22   off off off off off off off on    0.0000 0.0000"
+        where the lamp order is: hgar neon argon krypton h he spare cont
 
-        hgar neon argon krypton h he cont
+        Note that we drop the "spare" lamp here.
         """
 
         statusDict = {}

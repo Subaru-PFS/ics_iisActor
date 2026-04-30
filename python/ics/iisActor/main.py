@@ -6,7 +6,7 @@ import actorcore.ICC
 class OurActor(actorcore.ICC.ICC):
     def __init__(self, name,
                  productName=None,
-                 modelNames=('gen2'),
+                 modelNames=(),
                  debugLevel=30):
 
         """ Setup an Actor instance. See help for actorcore.Actor for details. """
@@ -22,8 +22,9 @@ class OurActor(actorcore.ICC.ICC):
         self.monitors = dict()
 
     def reloadConfiguration(self, cmd):
-        cmd.inform('sections=%08x,%r' % (id(self.config),
-                                         self.config))
+        cmd.inform('sections=%08x,%r' % (id(self.actorConfig),
+                                         self.actorConfig))
+        self.callCommand('status')
 
     def connectionMade(self):
         if self.everConnected is False:
