@@ -1,3 +1,0 @@
-#/bin/bash
-#outputs civil date/time str in YYMMDD_hhmmss format (no colon for filenames)
-date  +%y%m%d_%H%M%S

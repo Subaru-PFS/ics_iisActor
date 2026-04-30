@@ -1,0 +1,5 @@
+#!/bin/bash
+si=`adcraw 7`
+sleep .6
+ingaas=`adcraw 8`
+echo "$si $ingaas"

@@ -68,6 +68,5 @@ export runlogfile=$statefileDir/runlog.txt
 
 # Since in IIS channels are the same as lamps, this is nuts and 
 # dangerous. ###FIXME.
-export lampchannel="1 2 3 4 5 6 7 8"
-export lampname=("lampname" hgar neon argon krypton hydrogen helium spare cont)
-
+export lampchannel="1 2 3 4 5 6 8"
+export lampname=("lampname" hgar neon argon krypton hydrogen helium _ halogen)

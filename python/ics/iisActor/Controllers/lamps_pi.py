@@ -6,7 +6,7 @@ import logging
 import socket
 import time
 
-from ics.pfilampsActor.Controllers import bufferedSocket
+from . import bufferedSocket
 reload(bufferedSocket)
 
 class NonClosingSocket(object):
@@ -23,7 +23,7 @@ class DeviceIO(object):
                  keepOpen=False,
                  loglevel=logging.DEBUG):
 
-        self.logger = logging.getLogger('pfilamps')
+        self.logger = logging.getLogger('iis')
         self.logger.setLevel(loglevel)
 
         self.device = None if keepOpen else False
@@ -124,8 +124,8 @@ class lamps_pi(object):
         self.logger.info('starting lamps_pi')
         self.EOL = b'\n'
 
-        host = self.actor.config.get('pi', 'host')
-        port = int(self.actor.config.get('pi', 'port'))
+        host = self.actor.actorConfig['pi']['host']
+        port = self.actor.actorConfig['pi']['port']
         self.logger.info(f'connecting to {host}:{port}')
 
         self.dev = SocketIO(host, port, name, self.EOL,

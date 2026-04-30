@@ -51,7 +51,7 @@ portstat () {
             echo ' on'
         fi
     else
-        echo 'not enabled'
+        echo 'not_enabled'
     fi
 }
 
@@ -106,7 +106,7 @@ portOn () {
         chval[$1]=1
         logstate $1 on
     else
-        if [ "$onOff" = "not enabled" ] ; then
+        if [ "$onOff" = "not_enabled" ] ; then
             echo "Port $1 is not enabled"
         fi
     fi
@@ -146,13 +146,22 @@ timestr () {
 allstat() {
     echo
     if [ "$1" != "" ]; then echo $1 ; fi
-    echo "`udtstr` " 
+    echo "`udtstr` "
+    statLine="$(timestr) "
     for i in 1 2 3 4 5 6 7 8
-     
     do
-        echo  "${chlabel[$i]} `portstat $i`"
+	stat1=`portstat $i`
+        echo  "${chlabel[$i]} $stat1"
+	statLine="$statLine $stat1"
     done
-    diodes
+    meas=`raw_diodes`
+    echo " diodes: $meas"
+
+    statLine="$statLine $meas"
+    echo $statLine >> $runlogfile
+    if [ -n "$activerunlogfile" ]; then
+        echo $statLine >> $activerunlogfile
+    fi
 }
 
 
@@ -238,6 +247,16 @@ elogstat () {
     else
         allstat $1 | tee -a  $caliblog
     fi
+}
+
+# Manage a per-run log, which gets allstat output between the 'go' and the end.
+startActiveRun () {
+    activerunlogfile="/tmp/runlog_active"
+    > $activerunlogfile
+}
+
+stopActiveRun () {
+    activerunlogfile=""
 }
 
 #flag0
@@ -413,6 +432,7 @@ _lamps () (
         elogit "Warming hgar"
 
         elogstat "  Time=0"
+        startActiveRun
         # warm up lamp ( 1 minute )
         portOn 1
         for i in `seq 1 12`
@@ -474,6 +494,7 @@ echo "checking output for channel $i"
         if [ $(( iter % 40 )) = 0 ] # every 10 seconds
         then
             touch $caliblog  # keep us alive--calibmonitor is watching mod date
+	    elogstat
         fi
         iter=$((iter + 1))
         if [ $iter -gt 400 ]
@@ -493,6 +514,8 @@ echo "checking output for channel $i"
     # now start lamp timing
     timestart=`date -u +%s`
     iter=0
+    startActiveRun
+    allstat
 
     # Turn on continuum
     if $contflg
@@ -514,6 +537,7 @@ echo "checking output for channel $i"
         fi
     done
 
+    allstat
     elogit "Going `udtstr`"
     oldtime=-1
     iter=0
@@ -558,6 +582,7 @@ echo "checking output for channel $i"
     # clean up
     alloff
     elogstat
+    stopActiveRun
     rm -rf $runningfile
     echo "done"
 )   
