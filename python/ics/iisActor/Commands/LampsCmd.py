@@ -122,8 +122,8 @@ class LampsCmd(object):
         maxWaitForRunningTime = 1
         loopTime = 0.2
 
-        if 'hgcd' in self.request:
-            maxtime = 190
+        if 'hgar' in self.request:
+            maxtime = 80
 
         lastRunning = lastReady = lastCooling = None
         startTime = time.time()
