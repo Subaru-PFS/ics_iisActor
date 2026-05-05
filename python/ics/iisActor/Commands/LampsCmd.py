@@ -1,5 +1,6 @@
 import re
 import time
+import threading
 
 import opscore.protocols.keys as keys
 import opscore.protocols.types as types
@@ -25,6 +26,7 @@ class LampsCmd(object):
             ('allstat', '', self.allstat),
             ('lamptimes', '', self.lampTimes),
             ('waitForReadySignal', '', self.waitForReadySignal),
+            ('waitForDone', '[<goId>]', self.waitForDone),
             ('pi', '@raw', self.raw),
         ]
 
@@ -40,9 +42,10 @@ class LampsCmd(object):
                                         keys.Key("delay", types.Float(), help="time to delay start for"),
                                         keys.Key("moduleNums", types.String(),
                                                  help="spectrograph modules we are connected to. Default='1234'"),
+                                        keys.Key("goId", types.Int(), help="id of 'go' command to match"),
                                         )
 
-        self.lampNames = ('hgar', 'neon', 'argon', 'krypton', 
+        self.lampNames = ('hgar', 'neon', 'argon', 'krypton',
                           'hydrogen', 'helium', 'halogen')
         self.piLampNames = ('hgar', 'neon', 'argon', 'krypton',
                             'hydrogen', 'helium', 'cont')
@@ -51,6 +54,8 @@ class LampsCmd(object):
         self.keyLampNames = {long:short for (long,short) in zip(self.piLampNames, self.statNames)}
 
         self.request = {}
+
+        self.goId = 1
 
     @property
     def pi(self):
@@ -221,16 +226,18 @@ class LampsCmd(object):
 
         self.waitForReadySignal(cmd, doFinish=False)
         cmd.inform('text="lamps ready, turning them on"')
+        self.goId += 1
         ret = self.pi.lampsCmd('go')
         self.genVisitKeys(cmd)
 
-        cmd.inform('text="lamps commanded, waiting for status"')        
+        cmd.inform('text="lamps commanded, waiting for status"')
         self.waitForOnSignal(cmd)
         self.allstat(cmd, doFinish=False)
 
         waitTime = max(0, self.requestTime-2)
 
         if noWait:
+            self.backgroundStatus(cmd, requestTime=self.requestTime, goId=self.goId)
             cmd.finish(f'text="lamps should be on; please wait {waitTime} to be safe."')
             return
         elif waitTime > 0:
@@ -243,6 +250,28 @@ class LampsCmd(object):
         ok = True
         if ok:
             cmd.finish()
+
+    def backgroundStatus(self, cmd, requestTime, goId):
+        """Arrange for a 'go' to finish in background, then generate allstat. """
+        def sendIt(goId=goId):
+            self.actor.callCommand(f'waitForDone goId={goId}')
+
+        t = threading.Timer(requestTime, sendIt)
+        t.start()
+
+    def waitForDone(self, cmd):
+        """Wait for current 'go' to finish, then generate allstat. """
+        cmdkeys = cmd.cmd.keywords
+
+        if 'goId' in cmdkeys:
+            goId = cmdkeys['goId'].values[0]
+            if goId != self.goId:
+                self.actor.bcast.fail('cannot wait for already finished command')
+                return
+
+        self.waitForFinishedSignal(cmd)
+        self.allstat(cmd, doFinish=False)
+        cmd.finish()
 
     def genVisitKeys(self, cmd):
         """Generate MHS keys based on confguration and status.
@@ -282,7 +311,7 @@ class LampsCmd(object):
         self.actor.sendVersionKey(cmd)
 
         cmd.inform(f'modules={self.actor.actorConfig["modules"]}')
-        
+
         self.genStatusKey(cmd, *self._getStatus(cmd))
         self.lampTimes(cmd, doFinish=False)
         cmd.finish()
@@ -345,4 +374,3 @@ class LampsCmd(object):
             cmd.inform(l)
         if doFinish:
             cmd.finish()
-
